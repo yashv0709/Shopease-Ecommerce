@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Database Service (Local Sandbox)
+  mongo:
+    image: mongo:latest
+    container_name: shopease-db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # Backend API Server
+  backend:
+    build: ./backend
+    container_name: shopease-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongo:27017/ecommerce
+      - JWT_SECRET=docker-secret-key-999-shopease
+      - FRONTEND_URL=http://localhost
+      - NODE_ENV=production
+    depends_on:
+      - mongo
+
+  # Frontend Nginx Server
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=http://localhost:5000/api
+    container_name: shopease-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
